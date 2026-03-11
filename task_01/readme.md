@@ -72,12 +72,17 @@
 | Driver Database | PostgreSQL | Реляционное хранение водителей |
 | Ride Database | PostgreSQL | Реляционное хранение поездок |
 | MongoDB | MongoDB | Документное хранение: геоданные водителей, аналитика поездок, read-модели (CQRS) |
-| Redis Cache | Redis | Кеширование профилей, активных заказов; хранение счётчиков rate limiting |
 
-#### Инфраструктура обмена событиями
+#### Кеширование (в составе сервисов)
 | Контейнер | Технология | Ответственность |
 |-----------|-----------|----------------|
-| Message Broker | Apache Kafka | Событийное взаимодействие: ride.requested, ride.accepted, ride.completed |
+| API Gateway Redis | Redis | Кеширование данных, Rate Limiting профилей |
+| Driver Cache | Redis | Кеширование статуса и геопозиции водителя (GEO) |
+
+#### Инфраструктура обмена событиями (в составе Notification Microservice)
+| Контейнер | Технология | Ответственность |
+|-----------|-----------|----------------|
+| Message Broker | Apache Kafka / RabbitMQ | Событийное взаимодействие: ride.requested, ride.accepted, ride.completed |
 
 ---
 

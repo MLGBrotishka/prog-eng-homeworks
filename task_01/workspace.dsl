@@ -39,29 +39,24 @@ workspace {
             }
 
 
-            redisCache = container "Redis Cache" {
-                description "Кеширование данных, Rate Limiting, геоиндексация водителей (Redis GEO)"
-                technology "Redis"
-                tags "Database"
-            }
-            messageBroker = container "Message Broker" {
-                description "Центральная шина Event-Driven архитектуры. Асинхронная коммуникация между микросервисами."
-                technology "RabbitMQ / Apache Kafka"
-                tags "MessageBroker"
-            }
-
-            # API Gateway
-            apiGateway = container "API Gateway" {
-                description "Единая точка входа. Выполняет маршрутизацию, аутентификацию и Rate Limiting."
-                technology "C++, Userver"
+            # API Gateway Group
+            group "API Gateway" {
+                apiGateway = container "API Gateway" {
+                    description "Единая точка входа. Выполняет маршрутизацию, аутентификацию и Rate Limiting."
+                    technology "C++, Userver"
+                }
+                apiGatewayRedis = container "API Gateway Redis" {
+                    description "Кеширование данных, Rate Limiting профилей"
+                    technology "Redis"
+                    tags "Database"
+                }
+                apiGateway -> apiGatewayRedis "Проверка Rate Limiting профилей" "TCP :6379"
             }
 
             passengerApp -> apiGateway "REST запросы пассажира" "HTTPS/JSON"
             driverApp -> apiGateway "REST запросы водителя" "HTTPS/JSON"
             apiGateway -> passengerApp "Отправка GQL/WS уведомлений" "WSS/JSON"
             apiGateway -> driverApp "Отправка GQL/WS уведомлений" "WSS/JSON"
-
-            apiGateway -> redisCache "Проверка Rate Limiting профилей" "TCP :6379"
 
             # Микросервис пользователей
             group "User Microservice" {
@@ -75,7 +70,6 @@ workspace {
                     tags "Database"
                 }
                 userService -> userDb "Чтение/запись данных" "SQL/TCP :5432"
-                userService -> redisCache "Кеширование профиля пользователя" "TCP :6379"
             }
 
             # Микросервис водителей
@@ -89,8 +83,13 @@ workspace {
                     technology "PostgreSQL"
                     tags "Database"
                 }
+                driverCache = container "Driver Cache" {
+                    description "Кеширование статуса и геопозиции водителя (GEO)"
+                    technology "Redis"
+                    tags "Database"
+                }
                 driverService -> driverDb "Чтение/запись данных" "SQL/TCP :5432"
-                driverService -> redisCache "Кеширование статуса и геопозиции водителя (GEO)" "TCP :6379"
+                driverService -> driverCache "Кеширование статуса и геопозиции водителя (GEO)" "TCP :6379"
             }
 
             # Микросервис поездок
@@ -119,6 +118,12 @@ workspace {
                     description "Подписывается на события из Message Broker и отправляет уведомления пассажирам и водителям (push, WebSocket)"
                     technology "C++, Userver"
                 }
+                messageBroker = container "Message Broker" {
+                    description "Центральная шина Event-Driven архитектуры. Асинхронная коммуникация между микросервисами."
+                    technology "RabbitMQ / Apache Kafka"
+                    tags "MessageBroker"
+                }
+                messageBroker -> notificationService "Подписка на все бизнес-события" "AMQP"
             }
 
             # Маршрутизация REST через API Gateway
@@ -133,7 +138,6 @@ workspace {
             # Асинхронное взаимодействие
             rideService -> messageBroker "Публикует: RideCreated, RideAccepted, RideCompleted" "AMQP"
             driverService -> messageBroker "Публикует: DriverStatusChanged" "AMQP"
-            messageBroker -> notificationService "Подписка на все бизнес-события" "AMQP"
 
             # Notification Service отправляет push-уведомления через внешний Push-сервис
             notificationService -> pushService "Отправка push-уведомлений пассажирам и водителям" "HTTPS/JSON"
@@ -177,7 +181,7 @@ workspace {
             taxiSystem.passengerApp -> taxiSystem.apiGateway "Запрос оценки стоимости"
             taxiSystem.rideService -> mapService "Расчет маршрута и времени"
             taxiSystem.rideService -> taxiSystem.driverService "Поиск ближайших водителей"
-            taxiSystem.driverService -> taxiSystem.redisCache "GEORADIUS: поиск водителей рядом"
+            taxiSystem.driverService -> taxiSystem.driverCache "GEORADIUS: поиск водителей рядом"
             taxiSystem.apiGateway -> taxiSystem.passengerApp "Возврат стоимости и времени"
 
             # Создание заказа и холдирование
