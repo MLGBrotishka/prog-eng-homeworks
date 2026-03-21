@@ -1,0 +1,434 @@
+openapi: 3.0.3
+info:
+  title: Taxi Service API
+  description: REST API for taxi service with users (passengers), drivers, and rides
+  version: 1.0.0
+  contact:
+    name: Taxi Service Team
+
+servers:
+  - url: http://localhost:8080
+    description: API Gateway - Unified entry point for all services
+
+tags:
+  - name: Authentication
+    description: User authentication operations
+  - name: Users
+    description: Passenger management operations
+  - name: Drivers
+    description: Driver management operations
+  - name: Rides
+    description: Ride management operations
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      description: Simple token-based authentication (user_id as token)
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        login:
+          type: string
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        first_name:
+          type: string
+          example: "John"
+        last_name:
+          type: string
+          example: "Doe"
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - login
+        - email
+        - first_name
+        - last_name
+
+    CreateUserRequest:
+      type: object
+      properties:
+        login:
+          type: string
+          example: "john_doe"
+        email:
+          type: string
+          format: email
+          example: "john@example.com"
+        first_name:
+          type: string
+          example: "John"
+        last_name:
+          type: string
+          example: "Doe"
+        password:
+          type: string
+          format: password
+          example: "securePassword123"
+      required:
+        - login
+        - email
+        - first_name
+        - last_name
+        - password
+
+    Driver:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        full_name:
+          type: string
+          example: "Jane Smith"
+        license_plate:
+          type: string
+          example: "AB 123 CD"
+        status:
+          type: string
+          example: "available"
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - full_name
+        - license_plate
+
+    RegisterDriverRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          example: "Jane Smith"
+        license_plate:
+          type: string
+          example: "AB 123 CD"
+      required:
+        - full_name
+        - license_plate
+
+    Ride:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        passenger_id:
+          type: integer
+          format: int64
+          example: 1
+        driver_id:
+          type: integer
+          format: int64
+          example: 2
+        from_address:
+          type: string
+          example: "Main St 1"
+        to_address:
+          type: string
+          example: "Oak Ave 25"
+        status:
+          type: string
+          example: "pending"
+        cost:
+          type: number
+          example: 15.5
+        created_at:
+          type: string
+          format: date-time
+      required:
+        - from_address
+        - to_address
+
+    CreateRideRequest:
+      type: object
+      properties:
+        from_address:
+          type: string
+          example: "Main St 1"
+        to_address:
+          type: string
+          example: "Oak Ave 25"
+      required:
+        - from_address
+        - to_address
+
+    LoginRequest:
+      type: object
+      properties:
+        login:
+          type: string
+          example: "john_doe"
+        password:
+          type: string
+          format: password
+          example: "securePassword123"
+      required:
+        - login
+        - password
+
+    AuthToken:
+      type: object
+      properties:
+        token:
+          type: string
+          example: "1"
+        user_id:
+          type: integer
+          format: int64
+          example: 1
+        expires_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: "Error message"
+
+paths:
+  /api/v1/users:
+    post:
+      tags:
+        - Users
+      summary: Create a new user (passenger)
+      description: Register a new passenger in the system
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUserRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '409':
+          description: User already exists
+    get:
+      tags:
+        - Users
+      summary: Find user by login
+      description: Find a specific user by their login
+      operationId: findUserByLogin
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: login
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: User found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+
+  /api/v1/users/search:
+    get:
+      tags:
+        - Users
+      summary: Search users by name
+      description: Find users by name mask
+      operationId: searchUsersByName
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: mask
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Users found
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+
+  /api/v1/auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Login user
+      description: Authenticate user and receive access token
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthToken'
+
+  /api/v1/drivers:
+    post:
+      tags:
+        - Drivers
+      summary: Register as a driver
+      description: Create a driver profile for the authenticated user
+      operationId: registerDriver
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDriverRequest'
+      responses:
+        '201':
+          description: Driver registered successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Driver'
+
+  /api/v1/rides:
+    post:
+      tags:
+        - Rides
+      summary: Create a ride request
+      description: Request a new taxi ride from A to B
+      operationId: createRide
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateRideRequest'
+      responses:
+        '201':
+          description: Ride request created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ride'
+    get:
+      tags:
+        - Rides
+      summary: List active rides
+      description: Get all rides with 'active' status
+      operationId: listActiveRides
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          required: true
+          schema:
+            type: string
+            enum: [active]
+      responses:
+        '200':
+          description: Rides retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ride'
+
+  /api/v1/rides/{id}/accept:
+    patch:
+      tags:
+        - Rides
+      summary: Accept a ride request
+      description: Driver accepts a pending ride request
+      operationId: acceptRide
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ride accepted
+
+  /api/v1/rides/{id}/complete:
+    patch:
+      tags:
+        - Rides
+      summary: Complete a ride
+      description: Driver finishes the ride
+      operationId: completeRide
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ride completed
+
+  /api/v1/users/{id}/rides:
+    get:
+      tags:
+        - Users
+        - Rides
+      summary: Get ride history for user
+      description: Retrieve history of rides for a specific passenger
+      operationId: userRideHistory
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: Ride history retrieved
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Ride'

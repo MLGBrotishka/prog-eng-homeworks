@@ -1,0 +1,48 @@
+components_manager:
+    task_processors:
+        main-task-processor:
+            worker_threads: 4
+        fs-task-processor:
+            worker_threads: 1
+
+    default_task_processor: main-task-processor
+
+    components:
+        server:
+            listener:
+                port: 8082
+                task_processor: main-task-processor
+        logging:
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: debug
+                    overflow_behavior: discard
+
+        jwt-auth-component:
+            secret: "your-jwt-secret-key-change-it-in-production"
+
+        handler-register-driver:
+            path: /api/v1/drivers
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        testsuite-support:
+
+        http-client:
+        http-client-core:
+        http-client-middleware-pipeline:
+        dns-client:
+
+        tests-control:
+            method: POST
+            path: /tests/control
+            task_processor: main-task-processor
+
+        handler-ping:
+            method: GET
+            path: /ping
+            task_processor: main-task-processor

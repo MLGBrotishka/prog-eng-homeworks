@@ -1,0 +1,28 @@
+#include "handlers.hpp"
+
+#include <userver/components/minimal_server_component_list.hpp>
+#include <userver/server/handlers/ping.hpp>
+#include <userver/clients/http/component.hpp>
+#include <userver/clients/http/component_core.hpp>
+#include <userver/clients/http/middlewares/pipeline_component.hpp>
+#include <userver/clients/dns/component.hpp>
+#include <userver/server/handlers/tests_control.hpp>
+#include <userver/testsuite/testsuite_support.hpp>
+#include <userver/utils/daemon_run.hpp>
+
+#include "../common/database.hpp"
+
+int main(int argc, char* argv[]) {
+    auto component_list = userver::components::MinimalServerComponentList()
+                              .Append<userver::server::handlers::Ping>()
+                              .Append<userver::components::TestsuiteSupport>()
+                              .Append<userver::clients::dns::Component>()
+                              .Append<userver::clients::http::MiddlewarePipelineComponent>()
+                              .Append<userver::components::HttpClientCore>()
+                              .Append<userver::components::HttpClient>()
+                              .Append<userver::server::handlers::TestsControl>();
+
+    taxi_service::user::AppendUserHandlers(component_list);
+
+    return userver::utils::DaemonMain(argc, argv, component_list);
+}

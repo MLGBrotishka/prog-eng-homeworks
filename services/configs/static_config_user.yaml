@@ -1,0 +1,57 @@
+components_manager:
+    task_processors:
+        main-task-processor:
+            worker_threads: 4
+        fs-task-processor:
+            worker_threads: 1
+
+    default_task_processor: main-task-processor
+
+    components:
+        server:
+            listener:
+                port: 8081
+                task_processor: main-task-processor
+        logging:
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: debug
+                    overflow_behavior: discard
+
+        handler-create-user:
+            path: /api/v1/users
+            method: POST
+            task_processor: main-task-processor
+
+        handler-find-user:
+            path: /api/v1/users
+            method: GET
+            task_processor: main-task-processor
+
+        handler-search-users:
+            path: /api/v1/users/search
+            method: GET
+            task_processor: main-task-processor
+
+        handler-login:
+            path: /api/v1/auth/login
+            method: POST
+            task_processor: main-task-processor
+
+        testsuite-support:
+
+        http-client:
+        http-client-core:
+        http-client-middleware-pipeline:
+        dns-client:
+
+        tests-control:
+            method: POST
+            path: /tests/control
+            task_processor: main-task-processor
+
+        handler-ping:
+            method: GET
+            path: /ping
+            task_processor: main-task-processor

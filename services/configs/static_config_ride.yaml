@@ -1,0 +1,80 @@
+components_manager:
+    task_processors:
+        main-task-processor:
+            worker_threads: 4
+        fs-task-processor:
+            worker_threads: 1
+
+    default_task_processor: main-task-processor
+
+    components:
+        server:
+            listener:
+                port: 8083
+                task_processor: main-task-processor
+        logging:
+            loggers:
+                default:
+                    file_path: '@stderr'
+                    level: debug
+                    overflow_behavior: discard
+
+        jwt-auth-component:
+            secret: "your-jwt-secret-key-change-it-in-production"
+
+        handler-create-ride:
+            path: /api/v1/rides
+            method: POST
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-list-active-rides:
+            path: /api/v1/rides
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-accept-ride:
+            path: /api/v1/rides/{id}/accept
+            method: PATCH
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-complete-ride:
+            path: /api/v1/rides/{id}/complete
+            method: PATCH
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        handler-user-ride-history:
+            path: /api/v1/users/{id}/rides
+            method: GET
+            task_processor: main-task-processor
+            auth:
+                types:
+                  - jwt-auth
+
+        testsuite-support:
+
+        http-client:
+        http-client-core:
+        http-client-middleware-pipeline:
+        dns-client:
+
+        tests-control:
+            method: POST
+            path: /tests/control
+            task_processor: main-task-processor
+
+        handler-ping:
+            method: GET
+            path: /ping
+            task_processor: main-task-processor
