@@ -13,7 +13,7 @@ class JwtChecker final
  public:
   using AuthCheckResult = userver::server::handlers::auth::AuthCheckResult;
 
-  JwtChecker(const std::string& secret);
+  JwtChecker(const std::string& secret, const std::string& issuer);
 
   AuthCheckResult CheckAuth(
       const userver::server::http::HttpRequest& request,
@@ -22,6 +22,7 @@ class JwtChecker final
 
  private:
   std::string secret_;
+  std::string issuer_;
 };
 
 using JwtCheckerPtr = std::shared_ptr<JwtChecker>;

@@ -18,6 +18,7 @@ public:
 
     CreateRideHandler(const userver::components::ComponentConfig& config,
                      const userver::components::ComponentContext& context);
+    static userver::yaml_config::Schema GetStaticConfigSchema();
 
     std::string HandleRequestThrow(
         const userver::server::http::HttpRequest& request,

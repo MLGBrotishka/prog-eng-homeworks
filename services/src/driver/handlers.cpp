@@ -4,6 +4,7 @@
 #include <userver/formats/json.hpp>
 #include <userver/server/handlers/http_handler_json_base.hpp>
 
+#include <userver/storages/postgres/component.hpp>
 namespace taxi_service::driver {
 
 int64_t ExtractUserIdFromContext(const userver::server::request::RequestContext& context) {
@@ -14,7 +15,8 @@ RegisterDriverHandler::RegisterDriverHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string RegisterDriverHandler::HandleRequestThrow(

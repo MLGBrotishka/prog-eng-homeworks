@@ -21,6 +21,7 @@ components_manager:
 
         jwt-auth-component:
             secret: "your-jwt-secret-key-change-it-in-production"
+            issuer: "taxi-service"
 
         handler-create-ride:
             path: /api/v1/rides
@@ -78,3 +79,10 @@ components_manager:
             method: GET
             path: /ping
             task_processor: main-task-processor
+
+        postgres-taxi-db:
+            dbconnection#env: POSTGRES_DSN
+            blocking_task_processor: fs-task-processor
+            dns_resolver: async
+            sync-start: true
+            connlimit_mode: auto
