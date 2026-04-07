@@ -48,7 +48,7 @@ COPY . /app
 RUN mkdir -p build && \
     cd build && \
     cmake -DCMAKE_BUILD_TYPE=Release \
-          -DUSERVER_FEATURE_POSTGRESQL=OFF \
+          -DUSERVER_FEATURE_POSTGRESQL=ON \
           -DUSERVER_FEATURE_TESTSUITE=OFF \
           -DUSERVER_FEATURE_FORMAT=OFF \
           .. && \

@@ -11,7 +11,7 @@ namespace {
 static constexpr std::string_view kAlgorithm = "Bearer ";
 }  // namespace
 
-JwtChecker::JwtChecker(const std::string& secret) : secret_(secret) {}
+JwtChecker::JwtChecker(const std::string& secret, const std::string& issuer) : secret_(secret), issuer_(issuer) {}
 
 JwtChecker::AuthCheckResult JwtChecker::CheckAuth(
     const userver::server::http::HttpRequest& request,
@@ -34,14 +34,22 @@ JwtChecker::AuthCheckResult JwtChecker::CheckAuth(
     
     auto verifier = ::jwt::verify<::jwt::traits::kazuho_picojson>()
         .allow_algorithm(::jwt::algorithm::hs256{secret_})
-        .with_issuer("taxi-service");
+        .with_issuer(issuer_);
     
     verifier.verify(decoded);
     
     if (decoded.has_payload_claim("user_id")) {
       auto user_id_claim = decoded.get_payload_claim("user_id");
-      int64_t user_id = std::stoll(user_id_claim.as_string());
-      context.SetData("user_id", user_id);
+      try {
+        int64_t user_id = std::stoll(user_id_claim.as_string());
+        context.SetData("user_id", user_id);
+      } catch (const std::exception& e) {
+        return AuthCheckResult{AuthCheckResult::Status::kForbidden,
+                               "Failed to parse user_id claim: " + std::string(e.what())};
+      }
+    } else {
+      return AuthCheckResult{AuthCheckResult::Status::kForbidden,
+                             "Missing user_id claim in token"};
     }
     
     return {};
@@ -61,7 +69,7 @@ JwtAuthComponent::JwtAuthComponent(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : LoggableComponentBase(config, context) {
-  authorizer_ = std::make_shared<JwtChecker>(config["secret"].As<std::string>());
+  authorizer_ = std::make_shared<JwtChecker>(config["secret"].As<std::string>(), config["issuer"].As<std::string>("taxi-service"));
 }
 
 JwtCheckerPtr JwtAuthComponent::Get() const { return authorizer_; }
@@ -72,9 +80,12 @@ type: object
 description: JWT Auth Checker Component
 additionalProperties: false
 properties:
-    secret:
-        type: string
-        description: secret key for JWT validation
+        secret:
+            type: string
+            description: secret key for JWT validation
+        issuer:
+            type: string
+            description: expected issuer for JWT validation
 )");
 }
 

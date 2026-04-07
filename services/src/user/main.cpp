@@ -10,6 +10,7 @@
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
 
+#include <userver/storages/postgres/component.hpp>
 #include "../common/database.hpp"
 
 int main(int argc, char* argv[]) {
@@ -20,7 +21,8 @@ int main(int argc, char* argv[]) {
                               .Append<userver::clients::http::MiddlewarePipelineComponent>()
                               .Append<userver::components::HttpClientCore>()
                               .Append<userver::components::HttpClient>()
-                              .Append<userver::server::handlers::TestsControl>();
+                              .Append<userver::server::handlers::TestsControl>()
+                              .Append<userver::components::Postgres>("postgres-taxi-db");
 
     taxi_service::user::AppendUserHandlers(component_list);
 

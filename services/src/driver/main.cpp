@@ -9,6 +9,7 @@
 #include <userver/server/handlers/tests_control.hpp>
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
+#include <userver/storages/postgres/component.hpp>
 
 #include <auth/jwt_auth_checker.hpp>
 #include <auth/jwt_auth_factory.hpp>
@@ -27,6 +28,7 @@ int main(int argc, char* argv[]) {
                               .Append<userver::server::handlers::TestsControl>()
                               .Append<taxi_service::auth::jwt::JwtAuthComponent>();
 
+    component_list.Append<userver::components::Postgres>("postgres-taxi-db");
     taxi_service::driver::AppendDriverHandlers(component_list);
 
     return userver::utils::DaemonMain(argc, argv, component_list);

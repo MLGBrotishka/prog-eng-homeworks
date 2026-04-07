@@ -1,11 +1,14 @@
 #include "handlers.hpp"
 
 #include <userver/components/component.hpp>
+#include <userver/storages/postgres/component.hpp>
+#include <userver/storages/postgres/exceptions.hpp>
 #include <userver/formats/json.hpp>
 #include <userver/server/handlers/http_handler_json_base.hpp>
 #include <userver/crypto/hash.hpp>
 #include <userver/utils/datetime.hpp>
 #include <jwt-cpp/jwt.h>
+#include <userver/yaml_config/merge_schemas.hpp>
 
 namespace taxi_service::user {
 
@@ -13,7 +16,8 @@ CreateUserHandler::CreateUserHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string CreateUserHandler::HandleRequestThrow(
@@ -49,23 +53,35 @@ std::string CreateUserHandler::HandleRequestThrow(
         );
     }
 
-    auto user = db_->CreateUser(create_request);
-    if (!user) {
+    try {
+        auto user = db_->CreateUser(create_request);
+        if (!user) {
+            request.SetResponseStatus(userver::server::http::HttpStatus::kConflict);
+            return userver::formats::json::ToString(
+                userver::formats::json::MakeObject("error", "User already exists")
+            );
+        }
+        request.SetResponseStatus(userver::server::http::HttpStatus::kCreated);
+        return userver::formats::json::ToString(user->ToJson());
+    } catch (const userver::storages::postgres::UniqueViolation& ex) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kConflict);
         return userver::formats::json::ToString(
-            userver::formats::json::MakeObject("error", "User already exists")
+            userver::formats::json::MakeObject("error", "Login or email already exists")
+        );
+    } catch (const std::exception& ex) {
+        request.SetResponseStatus(userver::server::http::HttpStatus::kInternalServerError);
+        return userver::formats::json::ToString(
+            userver::formats::json::MakeObject("error", "Internal server error: " + std::string(ex.what()))
         );
     }
-
-    request.SetResponseStatus(userver::server::http::HttpStatus::kCreated);
-    return userver::formats::json::ToString(user->ToJson());
 }
 
 FindUserByLoginHandler::FindUserByLoginHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string FindUserByLoginHandler::HandleRequestThrow(
@@ -95,7 +111,8 @@ SearchUsersByNameHandler::SearchUsersByNameHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string SearchUsersByNameHandler::HandleRequestThrow(
@@ -124,25 +141,45 @@ LoginHandler::LoginHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
+    secret_ = config["jwt-secret"].As<std::string>();
+    issuer_ = config["jwt-issuer"].As<std::string>("taxi-service");
+    token_expiration_hours_ = config["token-expiration-hours"].As<int>(24);
+}
+userver::yaml_config::Schema LoginHandler::GetStaticConfigSchema() {
+    return userver::yaml_config::MergeSchemas<HttpHandlerBase>(R"(
+type: object
+description: login handler config
+additionalProperties: false
+properties:
+    jwt-secret:
+        type: string
+        description: secret key for JWT signing
+    jwt-issuer:
+        type: string
+        description: issuer for JWT signing
+    token-expiration-hours:
+        type: integer
+        description: expiration time for JWT in hours
+)");
 }
 
 std::string LoginHandler::GenerateToken(int64_t user_id) const {
-    // Generate JWT token with 24 hour expiration using kazuho-picojson traits
+    // Generate JWT token with configured expiration using kazuho-picojson traits
     auto token = ::jwt::create<::jwt::traits::kazuho_picojson>()
-        .set_issuer("taxi-service")
+        .set_issuer(issuer_)
         .set_type("JWT")
         .set_payload_claim("user_id", ::jwt::claim(std::to_string(user_id)))
         .set_issued_at(std::chrono::system_clock::now())
-        .set_expires_at(std::chrono::system_clock::now() + std::chrono::hours(24))
-        .sign(::jwt::algorithm::hs256{"your-secret-key-change-in-production"});
-    
+        .set_expires_at(std::chrono::system_clock::now() + std::chrono::hours(token_expiration_hours_))
+        .sign(::jwt::algorithm::hs256{secret_});
     return token;
 }
 
 std::string LoginHandler::HandleRequestThrow(
     const userver::server::http::HttpRequest& request,
-    userver::server::request::RequestContext&) const {
+    userver::server::request::RequestContext& /*context*/) const {
     
     auto request_body = userver::formats::json::FromString(request.RequestBody());
     
@@ -181,7 +218,7 @@ std::string LoginHandler::HandleRequestThrow(
     AuthToken token;
     token.token = GenerateToken(*user->id);
     token.user_id = *user->id;
-    token.expires_at = std::chrono::system_clock::now() + std::chrono::hours(24);
+    token.expires_at = std::chrono::system_clock::now() + std::chrono::hours(token_expiration_hours_);
 
     return userver::formats::json::ToString(token.ToJson());
 }

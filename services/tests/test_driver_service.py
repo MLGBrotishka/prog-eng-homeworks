@@ -3,6 +3,7 @@ import pytest
 import jwt
 import time
 import uuid
+import random
 
 JWT_SECRET_KEY = 'your-jwt-secret-key-change-it-in-production'
 
@@ -15,10 +16,21 @@ def make_jwt_token(user_id):
     }
     return jwt.encode(payload, JWT_SECRET_KEY, algorithm='HS256')
 
-import random
-
 async def test_register_driver_success(service_client):
-    user_id = random.randint(1000, 999999)
+    # 1. Create a user first (needed for foreign key constraint in Postgres)
+    login = f"user_{uuid.uuid4().hex[:8]}"
+    user_data = {
+        'login': login,
+        'email': f"{login}@example.com",
+        'first_name': 'Jane',
+        'last_name': 'Driver',
+        'password': 'password123'
+    }
+    user_resp = await service_client.post('/api/v1/users', json=user_data)
+    assert user_resp.status == 201
+    user_id = user_resp.json()['id']
+
+    # 2. Register as driver
     token = make_jwt_token(user_id)
     headers = {'Authorization': f'Bearer {token}'}
     

@@ -65,14 +65,17 @@ public:
 
     LoginHandler(const userver::components::ComponentConfig& config,
                 const userver::components::ComponentContext& context);
+    static userver::yaml_config::Schema GetStaticConfigSchema();
 
     std::string HandleRequestThrow(
         const userver::server::http::HttpRequest& request,
-        userver::server::request::RequestContext&) const override;
-
+        userver::server::request::RequestContext& context) const override;
 private:
-    std::shared_ptr<Database> db_;
     std::string GenerateToken(int64_t user_id) const;
+    std::shared_ptr<Database> db_;
+    std::string secret_;
+    std::string issuer_;
+    int token_expiration_hours_;
 };
 
 void AppendUserHandlers(userver::components::ComponentList& component_list);

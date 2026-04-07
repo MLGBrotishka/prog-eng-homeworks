@@ -1,8 +1,11 @@
 #include "handlers.hpp"
 
 #include <userver/components/component.hpp>
+#include <userver/storages/postgres/component.hpp>
 #include <userver/formats/json.hpp>
 #include <userver/server/handlers/http_handler_json_base.hpp>
+#include <userver/yaml_config/merge_schemas.hpp>
+#include <fmt/format.h>
 
 namespace taxi_service::ride {
 
@@ -14,7 +17,25 @@ CreateRideHandler::CreateRideHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    DatabaseConfig db_config;
+    db_config.base_ride_cost = config["base-ride-cost"].As<double>(10.0);
+    db_config.max_random_ride_cost = config["max-random-ride-cost"].As<double>(40.0);
+    db_ = std::make_shared<Database>(pg_component.GetCluster(), db_config);
+}
+userver::yaml_config::Schema CreateRideHandler::GetStaticConfigSchema() {
+    return userver::yaml_config::MergeSchemas<HttpHandlerBase>(R"(
+type: object
+description: create ride handler config
+additionalProperties: false
+properties:
+    base-ride-cost:
+        type: number
+        description: base cost for a ride
+    max-random-ride-cost:
+        type: number
+        description: max random additional cost for a ride
+)");
 }
 
 std::string CreateRideHandler::HandleRequestThrow(
@@ -47,7 +68,8 @@ ListActiveRidesHandler::ListActiveRidesHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string ListActiveRidesHandler::HandleRequestThrow(
@@ -70,7 +92,8 @@ AcceptRideHandler::AcceptRideHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string AcceptRideHandler::HandleRequestThrow(
@@ -99,7 +122,8 @@ CompleteRideHandler::CompleteRideHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string CompleteRideHandler::HandleRequestThrow(
@@ -134,7 +158,8 @@ UserRideHistoryHandler::UserRideHistoryHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    db_ = std::make_shared<Database>("/app/data/taxi.db");
+    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
+    db_ = std::make_shared<Database>(pg_component.GetCluster());
 }
 
 std::string UserRideHistoryHandler::HandleRequestThrow(

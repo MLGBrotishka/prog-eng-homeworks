@@ -1,6 +1,7 @@
 #include "handlers.hpp"
 
 #include <userver/components/minimal_server_component_list.hpp>
+#include <userver/storages/postgres/component.hpp>
 #include <userver/server/handlers/ping.hpp>
 #include <userver/clients/http/component.hpp>
 #include <userver/clients/http/component_core.hpp>
@@ -25,7 +26,8 @@ int main(int argc, char* argv[]) {
                               .Append<userver::components::HttpClientCore>()
                               .Append<userver::components::HttpClient>()
                               .Append<userver::server::handlers::TestsControl>()
-                              .Append<taxi_service::auth::jwt::JwtAuthComponent>();
+                              .Append<taxi_service::auth::jwt::JwtAuthComponent>()
+                              .Append<userver::components::Postgres>("postgres-taxi-db");
 
     taxi_service::ride::AppendRideHandlers(component_list);
 

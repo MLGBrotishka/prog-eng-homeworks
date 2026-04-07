@@ -4,15 +4,21 @@
 #include <string>
 #include <vector>
 #include <optional>
-#include <sqlite3.h>
+#include <userver/storages/postgres/cluster.hpp>
 
 #include "models.hpp"
 
 namespace taxi_service {
 
+struct DatabaseConfig {
+    double base_ride_cost = 10.0;
+    double max_random_ride_cost = 40.0;
+};
+
 class Database {
 public:
-    explicit Database(const std::string& db_path = "taxi.db");
+    explicit Database(userver::storages::postgres::ClusterPtr pg_cluster, 
+                     DatabaseConfig config = {});
     ~Database();
 
     // User operations
@@ -35,18 +41,9 @@ public:
     bool AcceptRide(int64_t ride_id, int64_t driver_id);
     bool CompleteRide(int64_t ride_id);
 
-    // Initialize database schema
-    void InitSchema();
-
 private:
-    sqlite3* db_;
-    
-    std::string HashPassword(const std::string& password) const;
-    bool VerifyPassword(const std::string& password, const std::string& hash) const;
-    
-    // Helper methods for SQLite operations
-    bool ExecuteSQL(const std::string& sql);
-    std::optional<int64_t> GetLastInsertId();
+    userver::storages::postgres::ClusterPtr pg_;
+    DatabaseConfig config_;
 };
 
 }  // namespace taxi_service

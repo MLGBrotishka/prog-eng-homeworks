@@ -21,6 +21,7 @@ components_manager:
 
         jwt-auth-component:
             secret: "your-jwt-secret-key-change-it-in-production"
+            issuer: "taxi-service"
 
         handler-register-driver:
             path: /api/v1/drivers
@@ -31,6 +32,13 @@ components_manager:
                   - jwt-auth
 
         testsuite-support:
+
+        postgres-taxi-db:
+            dbconnection#env: POSTGRES_DSN
+            blocking_task_processor: fs-task-processor
+            dns_resolver: async
+            sync-start: true
+            connlimit_mode: auto
 
         http-client:
         http-client-core:

@@ -21,7 +21,7 @@ down:
 
 # Build and start services
 build:
-	cd services && docker-compose up --build -d
+	cd services && docker-compose down && docker-compose up -d --build
 
 # Show logs from all services
 logs:

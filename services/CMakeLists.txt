@@ -6,16 +6,8 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find userver (preinstalled in Docker image)
-find_package(userver REQUIRED COMPONENTS core)
+find_package(userver REQUIRED COMPONENTS core postgresql)
 
-# Find SQLite3
-find_package(SQLite3 REQUIRED)
-if(NOT SQLite3_FOUND)
-    message(FATAL_ERROR "SQLite3 not found")
-endif()
-
-message(STATUS "SQLite3 libraries: ${SQLITE3_LIBRARIES}")
-message(STATUS "SQLite3 include dirs: ${SQLITE3_INCLUDE_DIRS}")
 
 # JWT-CPP is header-only, we just need to include it
 # It will be installed in /usr/local/include/jwt-cpp
@@ -33,12 +25,11 @@ add_executable(${PROJECT_NAME}-user
 
 target_include_directories(${PROJECT_NAME}-user PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${SQLITE3_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}-user PRIVATE
     userver::core
-    /usr/lib/x86_64-linux-gnu/libsqlite3.so
+    userver::postgresql
 )
 
 # Driver Service executable
@@ -53,12 +44,11 @@ add_executable(${PROJECT_NAME}-driver
 
 target_include_directories(${PROJECT_NAME}-driver PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${SQLITE3_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}-driver PRIVATE
     userver::core
-    /usr/lib/x86_64-linux-gnu/libsqlite3.so
+    userver::postgresql
 )
 
 # Ride Service executable
@@ -73,12 +63,11 @@ add_executable(${PROJECT_NAME}-ride
 
 target_include_directories(${PROJECT_NAME}-ride PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}/src
-    ${SQLITE3_INCLUDE_DIRS}
 )
 
 target_link_libraries(${PROJECT_NAME}-ride PRIVATE
     userver::core
-    /usr/lib/x86_64-linux-gnu/libsqlite3.so
+    userver::postgresql
 )
 
 # Install targets
