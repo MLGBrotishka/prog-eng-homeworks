@@ -21,13 +21,6 @@ public:
                      DatabaseConfig config = {});
     ~Database();
 
-    // User operations
-    std::optional<User> CreateUser(const CreateUserRequest& request);
-    std::optional<User> FindUserByLogin(const std::string& login);
-    std::optional<User> FindUserById(int64_t id);
-    std::vector<User> SearchUsersByNameMask(const std::string& mask);
-    std::optional<User> AuthenticateUser(const std::string& login, const std::string& password);
-
     // Driver operations
     std::optional<Driver> RegisterDriver(int64_t user_id, const RegisterDriverRequest& request);
     std::optional<Driver> GetDriverByUserId(int64_t user_id);

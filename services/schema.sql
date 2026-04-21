@@ -1,16 +1,6 @@
-CREATE TABLE users (
-    id            BIGSERIAL PRIMARY KEY,
-    login         VARCHAR(255) UNIQUE NOT NULL,
-    email         VARCHAR(255) UNIQUE NOT NULL,
-    first_name    VARCHAR(255) NOT NULL,
-    last_name     VARCHAR(255) NOT NULL,
-    password_hash VARCHAR(255) NOT NULL,
-    created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
 CREATE TABLE drivers (
     id            BIGSERIAL PRIMARY KEY,
-    user_id       BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    user_id       BIGINT NOT NULL,
     full_name     VARCHAR(255) NOT NULL,
     license_plate VARCHAR(50) NOT NULL,
     status        VARCHAR(50) NOT NULL DEFAULT 'available'
@@ -21,7 +11,7 @@ CREATE TABLE drivers (
 
 CREATE TABLE rides (
     id            BIGSERIAL PRIMARY KEY,
-    passenger_id  BIGINT NOT NULL REFERENCES users(id),
+    passenger_id  BIGINT NOT NULL,
     driver_id     BIGINT REFERENCES drivers(id),
     from_address  TEXT NOT NULL,
     to_address    TEXT NOT NULL,
@@ -30,12 +20,6 @@ CREATE TABLE rides (
     cost          DOUBLE PRECISION CHECK (cost >= 0),
     created_at    TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
--- find user by login (API op 2)
-CREATE INDEX idx_users_login ON users(login);
-
--- search by name mask (API op 3)
-CREATE INDEX idx_users_name ON users(first_name, last_name);
 
 -- FK lookup
 CREATE INDEX idx_drivers_user_id ON drivers(user_id);

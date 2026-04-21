@@ -21,6 +21,28 @@ services:
       - taxi-network
     restart: unless-stopped
 
+  mongodb:
+    image: mongo:7-jammy
+    container_name: taxi-mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: taxi_mongo
+      MONGO_INITDB_ROOT_PASSWORD: taxi_mongo_password
+      MONGO_INITDB_DATABASE: taxi_db
+    volumes:
+      - mongo_data:/data/db
+      - ./mongo-init:/docker-entrypoint-initdb.d:ro
+    ports:
+      - "27017:27017"
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--username", "taxi_mongo", "--password", "taxi_mongo_password", "--authenticationDatabase", "admin", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+    networks:
+      - taxi-network
+    restart: unless-stopped
+
   user-service:
     platform: linux/amd64
     build:
@@ -35,8 +57,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mongodb:
+        condition: service_healthy
     environment:
       POSTGRES_DSN: postgresql://taxi_user:taxi_password@postgres:5432/taxi_db
+      MONGO_URI: mongodb://taxi_mongo:taxi_mongo_password@mongodb:27017/taxi_db?authSource=admin
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/ping"]
       interval: 10s
@@ -128,3 +153,4 @@ networks:
 
 volumes:
   postgres_data:
+  mongo_data:

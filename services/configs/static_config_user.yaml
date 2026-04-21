@@ -8,12 +8,9 @@ components_manager:
     default_task_processor: main-task-processor
 
     components:
-        postgres-taxi-db:
-            dbconnection#env: POSTGRES_DSN
-            blocking_task_processor: fs-task-processor
-            dns_resolver: async
-            sync-start: true
-            connlimit_mode: auto
+        mongo-taxi-db:
+            dbconnection#env: MONGO_DSN
+            dbconnection#fallback: mongodb://taxi_mongo:taxi_mongo_password@mongodb:27017/taxi_db?authSource=admin
         server:
             listener:
                 port: 8081

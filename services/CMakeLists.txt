@@ -6,7 +6,7 @@ set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 # Find userver (preinstalled in Docker image)
-find_package(userver REQUIRED COMPONENTS core postgresql)
+find_package(userver REQUIRED COMPONENTS core postgresql mongo)
 
 
 # JWT-CPP is header-only, we just need to include it
@@ -19,6 +19,7 @@ add_executable(${PROJECT_NAME}-user
     src/user/handlers.cpp
     src/common/models.cpp
     src/common/database.cpp
+    src/common/mongo_database.cpp
     src/auth/jwt_auth_checker.cpp
     src/auth/jwt_auth_factory.cpp
 )
@@ -30,6 +31,7 @@ target_include_directories(${PROJECT_NAME}-user PRIVATE
 target_link_libraries(${PROJECT_NAME}-user PRIVATE
     userver::core
     userver::postgresql
+    userver::mongo
 )
 
 # Driver Service executable

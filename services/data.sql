@@ -1,20 +1,6 @@
 -- Test data for taxi ordering system
 -- Password hash is SHA256 of "password"
 
--- Users (12 total: users 1-2 are passengers only, users 3-12 are also drivers)
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('john_doe', 'john@example.com', 'John', 'Doe', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('jane_smith', 'jane@example.com', 'Jane', 'Smith', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('bob_wilson', 'bob@example.com', 'Bob', 'Wilson', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('alice_brown', 'alice@example.com', 'Alice', 'Brown', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('charlie_davis', 'charlie@example.com', 'Charlie', 'Davis', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('diana_evans', 'diana@example.com', 'Diana', 'Evans', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('frank_garcia', 'frank@example.com', 'Frank', 'Garcia', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('grace_harris', 'grace@example.com', 'Grace', 'Harris', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('henry_jackson', 'henry@example.com', 'Henry', 'Jackson', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('irene_king', 'irene@example.com', 'Irene', 'King', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('kevin_lee', 'kevin@example.com', 'Kevin', 'Lee', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-INSERT INTO users (login, email, first_name, last_name, password_hash) VALUES ('laura_martin', 'laura@example.com', 'Laura', 'Martin', '4dbd5e49147b5102ee2731ac03dd0db7decc3b8715c3df3c1f3ddc62dcbcf86d');
-
 -- Drivers (10 total, referencing user_ids 3-12)
 INSERT INTO drivers (user_id, full_name, license_plate) VALUES (3, 'Bob Wilson', 'ABC-1234');
 INSERT INTO drivers (user_id, full_name, license_plate) VALUES (4, 'Alice Brown', 'DEF-5678');

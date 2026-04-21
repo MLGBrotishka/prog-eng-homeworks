@@ -1,8 +1,8 @@
 #include "handlers.hpp"
 
 #include <userver/components/component.hpp>
-#include <userver/storages/postgres/component.hpp>
-#include <userver/storages/postgres/exceptions.hpp>
+#include <userver/storages/mongo/component.hpp>
+#include <userver/storages/mongo/exception.hpp>
 #include <userver/formats/json.hpp>
 #include <userver/server/handlers/http_handler_json_base.hpp>
 #include <userver/crypto/hash.hpp>
@@ -16,8 +16,8 @@ CreateUserHandler::CreateUserHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
-    db_ = std::make_shared<Database>(pg_component.GetCluster());
+    auto& mongo_component = context.FindComponent<userver::components::Mongo>("mongo-taxi-db");
+    db_ = std::make_shared<MongoDatabase>(mongo_component.GetPool());
 }
 
 std::string CreateUserHandler::HandleRequestThrow(
@@ -63,11 +63,6 @@ std::string CreateUserHandler::HandleRequestThrow(
         }
         request.SetResponseStatus(userver::server::http::HttpStatus::kCreated);
         return userver::formats::json::ToString(user->ToJson());
-    } catch (const userver::storages::postgres::UniqueViolation& ex) {
-        request.SetResponseStatus(userver::server::http::HttpStatus::kConflict);
-        return userver::formats::json::ToString(
-            userver::formats::json::MakeObject("error", "Login or email already exists")
-        );
     } catch (const std::exception& ex) {
         request.SetResponseStatus(userver::server::http::HttpStatus::kInternalServerError);
         return userver::formats::json::ToString(
@@ -80,8 +75,8 @@ FindUserByLoginHandler::FindUserByLoginHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
-    db_ = std::make_shared<Database>(pg_component.GetCluster());
+    auto& mongo_component = context.FindComponent<userver::components::Mongo>("mongo-taxi-db");
+    db_ = std::make_shared<MongoDatabase>(mongo_component.GetPool());
 }
 
 std::string FindUserByLoginHandler::HandleRequestThrow(
@@ -111,8 +106,8 @@ SearchUsersByNameHandler::SearchUsersByNameHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
-    db_ = std::make_shared<Database>(pg_component.GetCluster());
+    auto& mongo_component = context.FindComponent<userver::components::Mongo>("mongo-taxi-db");
+    db_ = std::make_shared<MongoDatabase>(mongo_component.GetPool());
 }
 
 std::string SearchUsersByNameHandler::HandleRequestThrow(
@@ -141,8 +136,8 @@ LoginHandler::LoginHandler(
     const userver::components::ComponentConfig& config,
     const userver::components::ComponentContext& context)
     : HttpHandlerBase(config, context) {
-    auto& pg_component = context.FindComponent<userver::components::Postgres>("postgres-taxi-db");
-    db_ = std::make_shared<Database>(pg_component.GetCluster());
+    auto& mongo_component = context.FindComponent<userver::components::Mongo>("mongo-taxi-db");
+    db_ = std::make_shared<MongoDatabase>(mongo_component.GetPool());
     secret_ = config["jwt-secret"].As<std::string>();
     issuer_ = config["jwt-issuer"].As<std::string>("taxi-service");
     token_expiration_hours_ = config["token-expiration-hours"].As<int>(24);
