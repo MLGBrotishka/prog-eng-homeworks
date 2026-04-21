@@ -10,8 +10,8 @@
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
 
-#include <userver/storages/postgres/component.hpp>
-#include "../common/database.hpp"
+#include <userver/storages/mongo/component.hpp>
+#include "../common/mongo_database.hpp"
 
 int main(int argc, char* argv[]) {
     auto component_list = userver::components::MinimalServerComponentList()
@@ -22,7 +22,7 @@ int main(int argc, char* argv[]) {
                               .Append<userver::components::HttpClientCore>()
                               .Append<userver::components::HttpClient>()
                               .Append<userver::server::handlers::TestsControl>()
-                              .Append<userver::components::Postgres>("postgres-taxi-db");
+                              .Append<userver::components::Mongo>("mongo-taxi-db");
 
     taxi_service::user::AppendUserHandlers(component_list);
 

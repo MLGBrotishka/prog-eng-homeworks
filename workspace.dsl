@@ -65,11 +65,11 @@ workspace {
                     technology "C++, Userver"
                 }
                 userDb = container "User Database" {
-                    description "Реляционное хранение данных пользователей"
-                    technology "PostgreSQL"
+                    description "Документное хранение данных пользователей"
+                    technology "MongoDB"
                     tags "Database"
                 }
-                userService -> userDb "Чтение/запись данных" "SQL/TCP :5432"
+                userService -> userDb "Чтение/запись данных" "MQL/TCP :27017"
             }
 
             # Микросервис водителей

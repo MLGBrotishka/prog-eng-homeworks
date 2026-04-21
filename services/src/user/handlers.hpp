@@ -5,7 +5,7 @@
 #include <userver/components/component_list.hpp>
 #include <userver/server/handlers/http_handler_base.hpp>
 
-#include "../common/database.hpp"
+#include "../common/mongo_database.hpp"
 #include "../common/models.hpp"
 
 namespace taxi_service::user {
@@ -23,7 +23,7 @@ public:
         userver::server::request::RequestContext&) const override;
 
 private:
-    std::shared_ptr<Database> db_;
+    std::shared_ptr<MongoDatabase> db_;
 };
 
 // GET /api/v1/users/by-login?login=... - Find user by login
@@ -39,7 +39,7 @@ public:
         userver::server::request::RequestContext&) const override;
 
 private:
-    std::shared_ptr<Database> db_;
+    std::shared_ptr<MongoDatabase> db_;
 };
 
 // GET /api/v1/users/search?mask=... - Search users by name mask
@@ -55,7 +55,7 @@ public:
         userver::server::request::RequestContext&) const override;
 
 private:
-    std::shared_ptr<Database> db_;
+    std::shared_ptr<MongoDatabase> db_;
 };
 
 // POST /api/v1/auth/login - Login user
@@ -72,7 +72,7 @@ public:
         userver::server::request::RequestContext& context) const override;
 private:
     std::string GenerateToken(int64_t user_id) const;
-    std::shared_ptr<Database> db_;
+    std::shared_ptr<MongoDatabase> db_;
     std::string secret_;
     std::string issuer_;
     int token_expiration_hours_;

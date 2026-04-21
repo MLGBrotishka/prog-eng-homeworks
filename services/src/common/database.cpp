@@ -1,112 +1,14 @@
 #include "database.hpp"
 
-#include <userver/crypto/hash.hpp>
 #include <userver/storages/postgres/cluster.hpp>
 #include <cstdlib>
 
 namespace taxi_service {
 
-namespace {
-    std::string HashPassword(const std::string& password) {
-        return userver::crypto::hash::Sha256(password);
-    }
-
-    bool VerifyPassword(const std::string& password, const std::string& hash) {
-        return HashPassword(password) == hash;
-    }
-}
-
 Database::Database(userver::storages::postgres::ClusterPtr pg_cluster, DatabaseConfig config) 
     : pg_(std::move(pg_cluster)), config_(config) {}
 
 Database::~Database() = default;
-
-std::optional<User> Database::CreateUser(const CreateUserRequest& request) {
-    auto hash = HashPassword(request.password);
-    auto res = pg_->Execute(
-        userver::storages::postgres::ClusterHostType::kMaster,
-        "INSERT INTO users (login, email, first_name, last_name, password_hash) "
-        "VALUES ($1, $2, $3, $4, $5) RETURNING id, login, email, first_name, last_name, password_hash, created_at",
-        request.login, request.email, request.first_name, request.last_name, hash);
-    if (res.IsEmpty()) return std::nullopt;
-    
-    auto row = res[0];
-    User u;
-    u.id = row["id"].As<int64_t>();
-    u.login = row["login"].As<std::string>();
-    u.email = row["email"].As<std::string>();
-    u.first_name = row["first_name"].As<std::string>();
-    u.last_name = row["last_name"].As<std::string>();
-    u.password_hash = row["password_hash"].As<std::string>();
-    u.created_at = row["created_at"].As<std::chrono::system_clock::time_point>();
-    return u;
-}
-
-std::optional<User> Database::FindUserByLogin(const std::string& login) {
-    auto res = pg_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, login, email, first_name, last_name, password_hash, created_at FROM users WHERE login = $1",
-        login);
-    if (res.IsEmpty()) return std::nullopt;
-    
-    auto row = res[0];
-    User u;
-    u.id = row["id"].As<int64_t>();
-    u.login = row["login"].As<std::string>();
-    u.email = row["email"].As<std::string>();
-    u.first_name = row["first_name"].As<std::string>();
-    u.last_name = row["last_name"].As<std::string>();
-    u.password_hash = row["password_hash"].As<std::string>();
-    u.created_at = row["created_at"].As<std::chrono::system_clock::time_point>();
-    return u;
-}
-
-std::optional<User> Database::FindUserById(int64_t id) {
-    auto res = pg_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, login, email, first_name, last_name, password_hash, created_at FROM users WHERE id = $1",
-        id);
-    if (res.IsEmpty()) return std::nullopt;
-    
-    auto row = res[0];
-    User u;
-    u.id = row["id"].As<int64_t>();
-    u.login = row["login"].As<std::string>();
-    u.email = row["email"].As<std::string>();
-    u.first_name = row["first_name"].As<std::string>();
-    u.last_name = row["last_name"].As<std::string>();
-    u.password_hash = row["password_hash"].As<std::string>();
-    u.created_at = row["created_at"].As<std::chrono::system_clock::time_point>();
-    return u;
-}
-
-std::vector<User> Database::SearchUsersByNameMask(const std::string& mask) {
-    std::string search = "%" + mask + "%";
-    auto res = pg_->Execute(
-        userver::storages::postgres::ClusterHostType::kSlave,
-        "SELECT id, login, email, first_name, last_name, password_hash, created_at FROM users WHERE first_name || ' ' || last_name ILIKE $1",
-        search);
-        
-    std::vector<User> results;
-    for (auto row : res) {
-        User u;
-        u.id = row["id"].As<int64_t>();
-        u.login = row["login"].As<std::string>();
-        u.email = row["email"].As<std::string>();
-        u.first_name = row["first_name"].As<std::string>();
-        u.last_name = row["last_name"].As<std::string>();
-        u.password_hash = row["password_hash"].As<std::string>();
-        u.created_at = row["created_at"].As<std::chrono::system_clock::time_point>();
-        results.push_back(u);
-    }
-    return results;
-}
-
-std::optional<User> Database::AuthenticateUser(const std::string& login, const std::string& password) {
-    auto u = FindUserByLogin(login);
-    if (!u || !VerifyPassword(password, u->password_hash)) return std::nullopt;
-    return u;
-}
 
 std::optional<Driver> Database::RegisterDriver(int64_t user_id, const RegisterDriverRequest& request) {
     auto res = pg_->Execute(
