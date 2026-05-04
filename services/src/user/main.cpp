@@ -13,6 +13,10 @@
 #include <userver/storages/mongo/component.hpp>
 #include "../common/mongo_database.hpp"
 
+#include <userver/storages/redis/component.hpp>
+#include <userver/storages/secdist/component.hpp>
+#include <userver/storages/secdist/provider_component.hpp>
+
 int main(int argc, char* argv[]) {
     auto component_list = userver::components::MinimalServerComponentList()
                               .Append<userver::server::handlers::Ping>()
@@ -22,7 +26,10 @@ int main(int argc, char* argv[]) {
                               .Append<userver::components::HttpClientCore>()
                               .Append<userver::components::HttpClient>()
                               .Append<userver::server::handlers::TestsControl>()
-                              .Append<userver::components::Mongo>("mongo-taxi-db");
+                              .Append<userver::components::Mongo>("mongo-taxi-db")
+                              .Append<userver::components::Secdist>()
+                              .Append<userver::components::DefaultSecdistProvider>()
+                              .Append<userver::components::Redis>("redis-taxi");
 
     taxi_service::user::AppendUserHandlers(component_list);
 

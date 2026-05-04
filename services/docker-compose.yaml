@@ -1,4 +1,18 @@
 services:
+  redis:
+    image: redis:7-alpine
+    container_name: taxi-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks:
+      - taxi-network
+    restart: unless-stopped
+
   postgres:
     image: postgres:16-alpine
     container_name: taxi-postgres
@@ -59,9 +73,12 @@ services:
         condition: service_healthy
       mongodb:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       POSTGRES_DSN: postgresql://taxi_user:taxi_password@postgres:5432/taxi_db
       MONGO_URI: mongodb://taxi_mongo:taxi_mongo_password@mongodb:27017/taxi_db?authSource=admin
+      SECDIST_CONFIG: '{"redis_settings":{"taxi-db":{"password":"","sentinels":[{"host":"redis","port":6379}],"shards":[{"name":"master"}]}}}'
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8081/ping"]
       interval: 10s
@@ -112,8 +129,11 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       POSTGRES_DSN: postgresql://taxi_user:taxi_password@postgres:5432/taxi_db
+      SECDIST_CONFIG: '{"redis_settings":{"taxi-db":{"password":"","sentinels":[{"host":"redis","port":6379}],"shards":[{"name":"master"}]}}}'
     healthcheck:
       test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8083/ping"]
       interval: 10s

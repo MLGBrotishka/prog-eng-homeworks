@@ -4,6 +4,7 @@ import os
 import json
 import logging
 import sys
+import redis
 
 # Get service URL from environment or use default (nginx gateway)
 SERVICE_URL = os.getenv('SERVICE_URL', 'http://nginx:80')
@@ -114,3 +115,12 @@ async def service_client(aiohttp_session):
     """Fixture for service client (via nginx gateway)"""
     print(f"[DEBUG] Creating service_client with SERVICE_URL={SERVICE_URL}", file=sys.stderr)
     return ServiceClient(SERVICE_URL, aiohttp_session)
+
+@pytest.fixture(autouse=True)
+def flush_redis_between_tests():
+    """Clear Redis state before each test to prevent rate limit bleeding"""
+    try:
+        r = redis.Redis(host='localhost', port=6379, db=0)
+        r.flushdb()
+    except redis.ConnectionError:
+        pass

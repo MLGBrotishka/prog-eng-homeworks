@@ -3,6 +3,10 @@
 #include <userver/components/minimal_server_component_list.hpp>
 #include <userver/storages/postgres/component.hpp>
 #include <userver/server/handlers/ping.hpp>
+
+#include <userver/storages/redis/component.hpp>
+#include <userver/storages/secdist/component.hpp>
+#include <userver/storages/secdist/provider_component.hpp>
 #include <userver/clients/http/component.hpp>
 #include <userver/clients/http/component_core.hpp>
 #include <userver/clients/http/middlewares/pipeline_component.hpp>
@@ -27,7 +31,10 @@ int main(int argc, char* argv[]) {
                               .Append<userver::components::HttpClient>()
                               .Append<userver::server::handlers::TestsControl>()
                               .Append<taxi_service::auth::jwt::JwtAuthComponent>()
-                              .Append<userver::components::Postgres>("postgres-taxi-db");
+                              .Append<userver::components::Postgres>("postgres-taxi-db")
+                              .Append<userver::components::Secdist>()
+                              .Append<userver::components::DefaultSecdistProvider>()
+                              .Append<userver::components::Redis>("redis-taxi");
 
     taxi_service::ride::AppendRideHandlers(component_list);
 
