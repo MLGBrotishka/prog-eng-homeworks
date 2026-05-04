@@ -80,6 +80,22 @@ components_manager:
             path: /ping
             task_processor: main-task-processor
 
+        default-secdist-provider:
+            missing-ok: true
+            environment-secrets-key: SECDIST_CONFIG
+
+        secdist:
+
+        redis-taxi:
+            groups:
+              - config_name: taxi-db
+                db: taxi-db
+                sharding_strategy: RedisStandalone
+            subscribe_groups: []
+            thread_pools:
+                redis_thread_pool_size: 2
+                sentinel_thread_pool_size: 1
+
         postgres-taxi-db:
             dbconnection#env: POSTGRES_DSN
             blocking_task_processor: fs-task-processor

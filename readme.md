@@ -239,3 +239,28 @@
 	```js
     load('/docker-entrypoint-initdb.d/queries.js');
 	```
+
+---
+
+# Домашнее задание 05: Оптимизация производительности (Вариант 16)
+
+В рамках ДЗ 05 в систему интегрирован Redis для кеширования и Rate Limiting:
+
+### 1. Кеширование (Cache-Aside)
+* **`GET /api/v1/rides?status=active`** (ride-service) — кешируется на 10 секунд (ключ `rides:active`). Инвалидируется явно при `PATCH /api/v1/rides/{id}/accept` и `complete`.
+* **`GET /api/v1/users/by-login`** (user-service) — профиль кешируется на 5 минут (ключ `user:login:{login}`).
+
+### 2. Rate Limiting (Sliding Window)
+Внедрен алгоритм Sliding Window Counter с атомарными `INCR` + `EXPIRE` через Redis. Возвращает статус `429 Too Many Requests` и заголовки `X-RateLimit-*`.
+* **`POST /api/v1/auth/login`**: 5 запросов в минуту (по IP).
+* **`POST /api/v1/rides`**: 10 запросов в минуту (по passenger_id).
+* **`GET /api/v1/rides?status=active`**: 30 запросов в минуту (по IP).
+
+Подробная архитектура описана в [performance_design.md](services/performance_design.md).
+
+**Запуск:**
+```bash
+cd services
+make build
+```
+Контейнер `taxi-redis` запускается автоматически вместе с остальными БД.

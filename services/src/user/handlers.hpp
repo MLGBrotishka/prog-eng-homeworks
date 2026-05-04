@@ -7,6 +7,8 @@
 
 #include "../common/mongo_database.hpp"
 #include "../common/models.hpp"
+#include "../common/redis_cache.hpp"
+#include "../common/rate_limiter.hpp"
 
 namespace taxi_service::user {
 
@@ -26,7 +28,7 @@ private:
     std::shared_ptr<MongoDatabase> db_;
 };
 
-// GET /api/v1/users/by-login?login=... - Find user by login
+// GET /api/v1/users/by-login?login=... - Find user by login (Cache-Aside)
 class FindUserByLoginHandler final : public userver::server::handlers::HttpHandlerBase {
 public:
     static constexpr std::string_view kName = "handler-find-user";
@@ -40,6 +42,7 @@ public:
 
 private:
     std::shared_ptr<MongoDatabase> db_;
+    std::shared_ptr<RedisCache> cache_;
 };
 
 // GET /api/v1/users/search?mask=... - Search users by name mask
@@ -58,7 +61,7 @@ private:
     std::shared_ptr<MongoDatabase> db_;
 };
 
-// POST /api/v1/auth/login - Login user
+// POST /api/v1/auth/login - Login user (Rate-Limited)
 class LoginHandler final : public userver::server::handlers::HttpHandlerBase {
 public:
     static constexpr std::string_view kName = "handler-login";
@@ -73,6 +76,7 @@ public:
 private:
     std::string GenerateToken(int64_t user_id) const;
     std::shared_ptr<MongoDatabase> db_;
+    std::shared_ptr<RateLimiter> rate_limiter_;
     std::string secret_;
     std::string issuer_;
     int token_expiration_hours_;

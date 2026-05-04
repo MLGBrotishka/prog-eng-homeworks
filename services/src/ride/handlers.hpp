@@ -8,10 +8,12 @@
 
 #include "../common/database.hpp"
 #include "../common/models.hpp"
+#include "../common/redis_cache.hpp"
+#include "../common/rate_limiter.hpp"
 
 namespace taxi_service::ride {
 
-// POST /api/v1/rides - Create ride request
+// POST /api/v1/rides - Create ride request (Rate-Limited)
 class CreateRideHandler final : public userver::server::handlers::HttpHandlerBase {
 public:
     static constexpr std::string_view kName = "handler-create-ride";
@@ -26,9 +28,10 @@ public:
 
 private:
     std::shared_ptr<Database> db_;
+    std::shared_ptr<RateLimiter> rate_limiter_;
 };
 
-// GET /api/v1/rides?status=active - List active rides
+// GET /api/v1/rides?status=active - List active rides (Cache-Aside + Rate-Limited)
 class ListActiveRidesHandler final : public userver::server::handlers::HttpHandlerBase {
 public:
     static constexpr std::string_view kName = "handler-list-active-rides";
@@ -42,9 +45,11 @@ public:
 
 private:
     std::shared_ptr<Database> db_;
+    std::shared_ptr<RedisCache> cache_;
+    std::shared_ptr<RateLimiter> rate_limiter_;
 };
 
-// PATCH /api/v1/rides/{id}/accept - Accept ride
+// PATCH /api/v1/rides/{id}/accept - Accept ride (invalidates cache)
 class AcceptRideHandler final : public userver::server::handlers::HttpHandlerBase {
 public:
     static constexpr std::string_view kName = "handler-accept-ride";
@@ -58,9 +63,10 @@ public:
 
 private:
     std::shared_ptr<Database> db_;
+    std::shared_ptr<RedisCache> cache_;
 };
 
-// PATCH /api/v1/rides/{id}/complete - Complete ride
+// PATCH /api/v1/rides/{id}/complete - Complete ride (invalidates cache)
 class CompleteRideHandler final : public userver::server::handlers::HttpHandlerBase {
 public:
     static constexpr std::string_view kName = "handler-complete-ride";
@@ -74,6 +80,7 @@ public:
 
 private:
     std::shared_ptr<Database> db_;
+    std::shared_ptr<RedisCache> cache_;
 };
 
 // GET /api/v1/users/{id}/rides - Ride history
